@@ -26,13 +26,16 @@ class DefaultFirebaseOptions {
   }
 
   // TODO: Replace every value below by running `flutterfire configure`.
+  // (The `civilsite-dev` project id matches .firebaserc / firebase.json so
+  // `flutter run --dart-define=USE_FIREBASE_EMULATOR=true` works against the
+  // local Firebase Emulator Suite without any real project.)
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'REPLACE_ME',
-    authDomain: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME',
+    apiKey: 'demo-api-key',
+    appId: '1:000000000000:web:0000000000000000000000',
+    messagingSenderId: '000000000000',
+    projectId: 'civilsite-dev',
+    authDomain: 'civilsite-dev.firebaseapp.com',
+    storageBucket: 'civilsite-dev.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
