@@ -221,8 +221,8 @@ class PreviewProjectList extends StatelessWidget {
             child: Center(
               child: Chip(
                 label: Text('Admin'),
-                backgroundColor: Colors.white24,
-                labelStyle: TextStyle(color: Colors.white),
+                backgroundColor: Colors.white,
+                labelStyle: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
               ),
             ),
           ),

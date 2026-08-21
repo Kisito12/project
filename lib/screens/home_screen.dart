@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/app_state.dart';
+import '../theme/app_theme.dart';
 import 'projects/project_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -21,8 +22,11 @@ class HomeScreen extends StatelessWidget {
             child: Center(
               child: Chip(
                 label: Text(user.isAdmin ? 'Admin' : 'Field Engineer'),
-                backgroundColor: Colors.white24,
-                labelStyle: const TextStyle(color: Colors.white),
+                backgroundColor: Colors.white,
+                labelStyle: const TextStyle(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
