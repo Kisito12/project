@@ -72,6 +72,17 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Bundled font used only by lib/main_preview.dart (a visual QA harness, see
+  # its doc comment) so it can render text without fetching Roboto from
+  # Google Fonts. The shipped app (lib/main.dart) does not reference this
+  # family and is unaffected.
+  fonts:
+    - family: PreviewFont
+      fonts:
+        - asset: assets/fonts/PreviewFont-Regular.ttf
+        - asset: assets/fonts/PreviewFont-Bold.ttf
+          weight: 700
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
