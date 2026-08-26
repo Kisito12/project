@@ -25,17 +25,11 @@ class PreviewApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseTheme = AppTheme.light;
-    final previewTheme = baseTheme.copyWith(
-      textTheme: baseTheme.textTheme.apply(fontFamily: 'PreviewFont'),
-      primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: 'PreviewFont'),
-      // appBarTheme.titleTextStyle is set independently of textTheme, so the
-      // override above doesn't reach it - patch it separately here so app
-      // bar titles render in this sandbox (no effect on the shipped app).
-      appBarTheme: baseTheme.appBarTheme.copyWith(
-        titleTextStyle: baseTheme.appBarTheme.titleTextStyle?.copyWith(fontFamily: 'PreviewFont'),
-      ),
-    );
+    // Uses a bundled local font instead of AppTheme's default (Google
+    // Fonts, fetched over the network) purely so this offline preview
+    // harness can render text without network access. The shipped app
+    // (lib/main.dart) calls AppTheme.light and is unaffected.
+    final previewTheme = AppTheme.buildTheme(fontFamilyOverride: 'PreviewFont');
     return MaterialApp(
       title: 'CivilSite Preview',
       debugShowCheckedModeBanner: false,

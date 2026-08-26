@@ -13,11 +13,20 @@ class AppTheme {
     BoxShadow(color: Color(0x14163A28), blurRadius: 18, offset: Offset(0, 6)),
   ];
 
-  static ThemeData get light {
-    final textTheme = GoogleFonts.plusJakartaSansTextTheme().apply(
-      bodyColor: textPrimary,
-      displayColor: textPrimary,
-    );
+  static ThemeData get light => buildTheme();
+
+  /// Builds the app theme. Every nested widget theme below (app bar,
+  /// buttons, chips...) derives its text styles from the single [textTheme]
+  /// computed here, rather than constructing fresh literal `TextStyle`s -
+  /// those bake their own font family in at this point and don't pick up a
+  /// later `ThemeData.copyWith(textTheme: ...)` override, which is exactly
+  /// what [fontFamilyOverride] is for (used by the offline preview harness
+  /// to swap in a bundled font - see lib/main_preview.dart).
+  static ThemeData buildTheme({String? fontFamilyOverride}) {
+    final textTheme = (fontFamilyOverride != null
+            ? Typography.material2021().black.apply(fontFamily: fontFamilyOverride)
+            : GoogleFonts.plusJakartaSansTextTheme())
+        .apply(bodyColor: textPrimary, displayColor: textPrimary);
 
     final base = ThemeData(
       useMaterial3: true,
@@ -54,7 +63,7 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, fontSize: 15),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,
         ),
@@ -64,7 +73,7 @@ class AppTheme {
           foregroundColor: primary,
           side: const BorderSide(color: primary, width: 1.4),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, fontSize: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
@@ -84,11 +93,11 @@ class AppTheme {
         filled: true,
         fillColor: const Color(0xFFEFF3EF),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        labelStyle: const TextStyle(color: textSecondary),
+        labelStyle: textTheme.bodyMedium?.copyWith(color: textSecondary),
       ),
       chipTheme: base.chipTheme.copyWith(
         backgroundColor: const Color(0xFFEFF3EF),
-        labelStyle: const TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
+        labelStyle: textTheme.labelLarge?.copyWith(color: textPrimary, fontWeight: FontWeight.w600),
         side: BorderSide.none,
       ),
       dividerTheme: const DividerThemeData(color: Color(0xFFE7ECE8), thickness: 1),
