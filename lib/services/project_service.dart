@@ -1,25 +1,39 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
+import '../models/building_spec.dart';
 import '../models/project.dart';
 import '../models/project_task.dart';
 
 class ProjectService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   CollectionReference<Map<String, dynamic>> get _projects =>
       _firestore.collection('projects');
 
-  Stream<List<Project>> watchProjects() {
+  /// Every project on the platform - for the super admin's oversight view.
+  Stream<List<Project>> watchAllProjects() {
     return _projects
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(Project.fromDoc).toList());
   }
 
-  /// Projects where the given field engineer is assigned.
-  Stream<List<Project>> watchProjectsForEngineer(String engineerId) {
+  /// All of a company's projects - for a company admin.
+  Stream<List<Project>> watchProjectsForCompany(String companyId) {
     return _projects
-        .where('assignedEngineerIds', arrayContains: engineerId)
+        .where('companyId', isEqualTo: companyId)
+        .snapshots()
+        .map((snap) => snap.docs.map(Project.fromDoc).toList());
+  }
+
+  /// Only the projects a worker is assigned to.
+  Stream<List<Project>> watchProjectsForWorker(String workerId) {
+    return _projects
+        .where('assignedWorkerIds', arrayContains: workerId)
         .snapshots()
         .map((snap) => snap.docs.map(Project.fromDoc).toList());
   }
@@ -34,8 +48,20 @@ class ProjectService {
     await _projects.doc(projectId).update({'status': status.name});
   }
 
-  Future<void> setAssignedEngineers(String projectId, List<String> engineerIds) async {
-    await _projects.doc(projectId).update({'assignedEngineerIds': engineerIds});
+  Future<void> setAssignedWorkers(String projectId, List<String> workerIds) async {
+    await _projects.doc(projectId).update({'assignedWorkerIds': workerIds});
+  }
+
+  Future<void> updateBuildingSpec(String projectId, BuildingSpec spec) async {
+    await _projects.doc(projectId).update({'buildingSpec': spec.toMap()});
+  }
+
+  Future<String> uploadPlan(String companyId, String projectId, File file, String fileName) async {
+    final ref = _storage.ref('plans/$companyId/$projectId/$fileName');
+    await ref.putFile(file);
+    final url = await ref.getDownloadURL();
+    await _projects.doc(projectId).update({'planFileUrl': url, 'planFileName': fileName});
+    return url;
   }
 
   Future<void> deleteProject(String projectId) async {
@@ -64,13 +90,5 @@ class ProjectService {
 
   Future<void> deleteTask(String projectId, String taskId) async {
     await _tasks(projectId).doc(taskId).delete();
-  }
-
-  /// Fraction of tasks completed (done) for a project, used for progress bars.
-  Future<double> computeProgress(String projectId) async {
-    final snap = await _tasks(projectId).get();
-    if (snap.docs.isEmpty) return 0;
-    final done = snap.docs.where((d) => d.data()['status'] == TaskStatus.done.name).length;
-    return done / snap.docs.length;
   }
 }

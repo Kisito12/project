@@ -7,19 +7,34 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return isSignedIn() &&
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
     }
 
-    function isAssignedToProject(projectId) {
-      let project = firestore.get(/databases/(default)/documents/projects/$(projectId));
-      return isSignedIn() && request.auth.uid in project.data.assignedEngineerIds;
+    function isCompanyMemberOf(companyId) {
+      return isSignedIn() && userDoc().data.companyId == companyId;
     }
 
+    function isCompanyAdminOf(companyId) {
+      return isSignedIn() && userDoc().data.role == 'companyAdmin' && userDoc().data.companyId == companyId;
+    }
+
+    function projectCompanyId(projectId) {
+      return firestore.get(/databases/(default)/documents/projects/$(projectId)).data.companyId;
+    }
+
+    // Architect's plan drawings, one folder per company/project.
+    match /plans/{companyId}/{projectId}/{fileName} {
+      allow read: if isCompanyMemberOf(companyId);
+      allow write: if isCompanyAdminOf(companyId)
+                   && request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    // Site inspection photos, one folder per project.
     match /inspection_photos/{projectId}/{fileName} {
-      allow read: if isAdmin() || isAssignedToProject(projectId);
-      allow write: if (isAdmin() || isAssignedToProject(projectId))
+      allow read: if isCompanyMemberOf(projectCompanyId(projectId));
+      allow write: if isCompanyMemberOf(projectCompanyId(projectId))
                    && request.resource.size < 10 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
     }

@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../models/app_user.dart';
 import '../../models/project.dart';
 import '../../models/project_task.dart';
-import '../../services/app_state.dart';
 import '../../services/project_service.dart';
 import '../../services/user_directory_service.dart';
 
 class TasksTab extends StatelessWidget {
   final Project project;
+  final AppUser user;
 
-  const TasksTab({super.key, required this.project});
+  const TasksTab({super.key, required this.project, required this.user});
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AppState>().currentUser!;
     final projectService = ProjectService();
 
     return Scaffold(
@@ -66,7 +64,7 @@ class TasksTab extends StatelessWidget {
                           checked == true ? TaskStatus.done : TaskStatus.todo,
                         );
                       },
-                      secondary: user.isAdmin
+                      secondary: user.isCompanyAdmin
                           ? IconButton(
                               icon: const Icon(Icons.delete_outline),
                               onPressed: () =>
@@ -113,14 +111,14 @@ class TasksTab extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               StreamBuilder<List<AppUser>>(
-                stream: UserDirectoryService().watchFieldEngineers(),
+                stream: UserDirectoryService().watchCompanyWorkers(project.companyId),
                 builder: (context, snapshot) {
-                  final engineers = snapshot.data ?? [];
+                  final workers = snapshot.data ?? [];
                   return DropdownButtonFormField<String>(
                     initialValue: assignedToId,
                     decoration: const InputDecoration(labelText: 'Assign to (optional)'),
-                    items: engineers
-                        .map((e) => DropdownMenuItem(value: e.uid, child: Text(e.name)))
+                    items: workers
+                        .map((w) => DropdownMenuItem(value: w.uid, child: Text(w.name)))
                         .toList(),
                     onChanged: (v) => assignedToId = v,
                   );

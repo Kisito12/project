@@ -1,35 +1,54 @@
 # CivilSite
 
-A Flutter + Firebase mobile app for civil engineering field teams. It covers
-three workflows for a construction project:
+A Flutter + Firebase platform for house-building projects, hosting multiple
+construction companies. For each project, a company can:
 
-- **Project & task management** — admins create projects, assign field
-  engineers, and track task/milestone progress.
-- **Site inspection & reporting** — field engineers log site visits with
-  notes, defect severity, and photos captured on-device.
-- **Cost estimating** — a bill-of-quantities style estimator covering every
-  phase of a build (siteworks, foundation, substructure, superstructure,
-  roofing, finishes), with material quantity/unit cost and labor cost per
-  line item, rolling up to phase and grand totals.
+- Attach the architect's plan drawing and turn its room dimensions into a
+  **structured takeoff** that auto-generates a starting cost estimate
+  spanning every trade - foundation, substructure, walls, roofing,
+  electrical, plumbing, and finishes - with material and labor cost per
+  line item.
+- Manage **projects and tasks**, assigning company workers and tracking
+  progress from foundation to key-handover.
+- Log **site inspection reports** with photos and defect severity.
 
 ## Roles
 
-Every account is either:
+- **Super Admin** - the platform owner. Approves or suspends companies and
+  can see every project on the platform, but doesn't manage day-to-day work.
+  There is no self-registration flow for this role (see "Bootstrapping the
+  super admin" below) - it has to be deliberately granted.
+- **Company Admin** - registers their company (which starts `pending` until
+  the super admin approves it), then manages that company's projects,
+  workers, plans/specs, and estimates.
+- **Company Worker** - joins an already-approved company from a list at
+  registration, sees only the projects they're assigned to, and submits
+  inspection reports and tasks.
 
-- **Admin / Manager** — creates and manages projects, assigns field
-  engineers, sees everything.
-- **Field Engineer** — sees only the projects they're assigned to, submits
-  inspection reports and cost estimates, updates their own tasks.
+Role and company membership are stored in Firestore (`users/{uid}.role`,
+`users/{uid}.companyId`) and enforced server-side by `firestore.rules` - a
+user cannot self-escalate their own role or company after registration.
 
-Role is chosen at registration and stored in Firestore (`users/{uid}.role`);
-`firestore.rules` enforces it server-side.
+## Why the estimator doesn't "read" the plan image
+
+Automatically extracting exact dimensions, electrical runs, and pipe layouts
+from a scanned/photographed architectural drawing is a hard computer-vision
+problem that isn't reliable enough for a v1. Instead: the plan image/PDF is
+attached to the project as a reference everyone can view, and whoever is
+looking at it enters the room-by-room dimensions into a structured form
+(`lib/screens/projects/plan_specs_tab.dart`). From that, `TakeoffCalculator`
+(`lib/models/building_spec.dart`) computes a starting quantity for each
+trade using simple, documented rules of thumb - e.g. wall area = perimeter ×
+height × floors, roofing area = footprint × a pitch multiplier, electrical
+points = a per-room-type allowance. Every generated line item is fully
+editable before the estimate is saved, same as a manually-built one.
 
 ## Tech stack
 
 - Flutter (Material 3)
 - Firebase Auth (email/password)
-- Cloud Firestore (projects, tasks, inspections, estimates)
-- Firebase Storage (inspection photos)
+- Cloud Firestore (companies, projects, tasks, inspections, estimates)
+- Firebase Storage (plan drawings, inspection photos)
 - `provider` for state management
 
 ## One-time setup
@@ -66,32 +85,60 @@ Role is chosen at registration and stored in Firestore (`users/{uid}.role`);
    flutter run
    ```
 
-6. **Create your first admin account**: register normally in the app and
-   choose "Admin / Manager" as the role. Admins can then assign field
-   engineers to projects (field engineers register the same way, choosing
-   "Field Engineer").
+## Bootstrapping the super admin
+
+There's no in-app way to register as super admin (a public "become platform
+owner" button would defeat the point). Instead:
+
+1. Register normally, choosing "Register a company" (this makes you a
+   company admin of a new, pending company).
+2. In the Firebase console, open your `users/{your-uid}` document and change
+   `role` from `companyAdmin` to `superAdmin`. Clear `companyId` (set it to
+   `null`) since super admins don't belong to a company.
+3. Sign out and back in - you'll land on the platform oversight screen.
+
+From there, approve your test companies (or any others that register) so
+their admins and workers can get in.
 
 ## Project structure
 
 ```
 lib/
   models/       Plain Dart data classes + Firestore (de)serialization
-  services/     Firebase-backed repositories (auth, projects, inspections, estimates)
-  screens/      UI, organized by feature (auth, projects, inspections, estimator)
-  theme/        App-wide Material theme
-firestore.rules      Role-based Firestore access rules
-storage.rules         Access rules for inspection photo uploads
-firestore.indexes.json  Composite indexes required by the app's queries
+                (company.dart, building_spec.dart holds the takeoff calculator)
+  services/     Firebase-backed repositories (auth, companies, projects, inspections, estimates)
+  screens/
+    auth/               Login, register (create-company / join-company)
+    super_admin/         Company oversight (approve/suspend, view a company's projects)
+    projects/             Project list/detail, tasks, plan & specs tab, worker assignment
+    inspections/          Site inspection reports
+    estimator/            Cost estimate builder & detail
+  theme/         App-wide Material theme
+firestore.rules         Role- and company-scoped Firestore access rules
+storage.rules            Access rules for plan drawings and inspection photos
+firestore.indexes.json   Composite indexes required by the app's queries
 ```
 
 ## Data model
 
-- `users/{uid}` — name, email, role (`admin` | `fieldEngineer`)
-- `projects/{id}` — name, location, description, status, assignedEngineerIds
+- `companies/{id}` — name, contactEmail, phone, status (`pending` | `approved` | `suspended`), ownerId
+- `users/{uid}` — name, email, role (`superAdmin` | `companyAdmin` | `companyWorker`), companyId
+- `projects/{id}` — companyId, name, location, description, client name/phone/address,
+  status, assignedWorkerIds, planFileUrl/planFileName, buildingSpec (floors,
+  footprint, wall height, foundation/roof type, rooms[])
   - `projects/{id}/tasks/{taskId}` — title, notes, status, assignedToId
-- `inspections/{id}` — projectId, inspectorId, summary, severity, photoUrls
-- `estimates/{id}` — projectId, title, items[] (each with phase, description,
-  quantity, unit, unitMaterialCost, laborCost)
+- `inspections/{id}` — companyId, projectId, inspectorId, summary, severity, photoUrls
+- `estimates/{id}` — companyId, projectId, title, items[] (each with phase,
+  description, quantity, unit, unitMaterialCost, laborCost)
+
+## Visual QA without Firebase
+
+`lib/main_preview.dart` renders every screen with sample in-memory data - no
+Firebase project or network connection needed:
+
+```bash
+flutter run -d chrome -t lib/main_preview.dart
+```
 
 ## Tests
 
@@ -99,3 +146,15 @@ firestore.indexes.json  Composite indexes required by the app's queries
 flutter test
 flutter analyze
 ```
+
+## Roadmap (not in this build)
+
+This is phase 1 of a larger vision. Deliberately out of scope for now, to
+keep the core (companies → projects → plan-based estimates) solid first:
+
+- A jobs marketplace where individual tradespeople list certifications/
+  experience and companies hire from that pool.
+- A materials marketplace with supplier-maintained live pricing, so
+  estimates can pull real market prices instead of manually entered ones.
+- Delivery tracking: buyer location + a driver's map view for materials
+  bought through the marketplace.

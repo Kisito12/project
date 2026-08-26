@@ -11,6 +11,7 @@ DefectSeverity defectSeverityFromString(String value) {
 
 class Inspection {
   final String id;
+  final String companyId;
   final String projectId;
   final String inspectorId;
   final String inspectorName;
@@ -21,6 +22,7 @@ class Inspection {
 
   const Inspection({
     required this.id,
+    required this.companyId,
     required this.projectId,
     required this.inspectorId,
     required this.inspectorName,
@@ -34,6 +36,7 @@ class Inspection {
     final data = doc.data()!;
     return Inspection(
       id: doc.id,
+      companyId: data['companyId'] as String? ?? '',
       projectId: data['projectId'] as String? ?? '',
       inspectorId: data['inspectorId'] as String? ?? '',
       inspectorName: data['inspectorName'] as String? ?? '',
@@ -46,6 +49,7 @@ class Inspection {
 
   Map<String, dynamic> toMap() {
     return {
+      'companyId': companyId,
       'projectId': projectId,
       'inspectorId': inspectorId,
       'inspectorName': inspectorName,

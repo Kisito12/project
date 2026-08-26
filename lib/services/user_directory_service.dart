@@ -5,10 +5,11 @@ import '../models/app_user.dart';
 class UserDirectoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Stream<List<AppUser>> watchFieldEngineers() {
+  Stream<List<AppUser>> watchCompanyWorkers(String companyId) {
     return _firestore
         .collection('users')
-        .where('role', isEqualTo: UserRole.fieldEngineer.name)
+        .where('companyId', isEqualTo: companyId)
+        .where('role', isEqualTo: UserRole.companyWorker.name)
         .snapshots()
         .map((snap) => snap.docs.map((d) => AppUser.fromMap(d.id, d.data())).toList());
   }

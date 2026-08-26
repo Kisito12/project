@@ -5,28 +5,28 @@ import '../../models/project.dart';
 import '../../services/project_service.dart';
 import '../../services/user_directory_service.dart';
 
-class AssignEngineersScreen extends StatefulWidget {
+class AssignWorkersScreen extends StatefulWidget {
   final Project project;
 
-  const AssignEngineersScreen({super.key, required this.project});
+  const AssignWorkersScreen({super.key, required this.project});
 
   @override
-  State<AssignEngineersScreen> createState() => _AssignEngineersScreenState();
+  State<AssignWorkersScreen> createState() => _AssignWorkersScreenState();
 }
 
-class _AssignEngineersScreenState extends State<AssignEngineersScreen> {
+class _AssignWorkersScreenState extends State<AssignWorkersScreen> {
   late Set<String> _selected;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _selected = widget.project.assignedEngineerIds.toSet();
+    _selected = widget.project.assignedWorkerIds.toSet();
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    await ProjectService().setAssignedEngineers(widget.project.id, _selected.toList());
+    await ProjectService().setAssignedWorkers(widget.project.id, _selected.toList());
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -34,7 +34,7 @@ class _AssignEngineersScreenState extends State<AssignEngineersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assign field engineers'),
+        title: const Text('Assign workers'),
         actions: [
           IconButton(
             icon: _saving
@@ -49,28 +49,28 @@ class _AssignEngineersScreenState extends State<AssignEngineersScreen> {
         ],
       ),
       body: StreamBuilder<List<AppUser>>(
-        stream: UserDirectoryService().watchFieldEngineers(),
+        stream: UserDirectoryService().watchCompanyWorkers(widget.project.companyId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final engineers = snapshot.data!;
-          if (engineers.isEmpty) {
-            return const Center(child: Text('No field engineers registered yet.'));
+          final workers = snapshot.data!;
+          if (workers.isEmpty) {
+            return const Center(child: Text('No workers have joined your company yet.'));
           }
           return ListView(
-            children: engineers
+            children: workers
                 .map(
-                  (e) => CheckboxListTile(
-                    title: Text(e.name),
-                    subtitle: Text(e.email),
-                    value: _selected.contains(e.uid),
+                  (w) => CheckboxListTile(
+                    title: Text(w.name),
+                    subtitle: Text(w.email),
+                    value: _selected.contains(w.uid),
                     onChanged: (checked) {
                       setState(() {
                         if (checked == true) {
-                          _selected.add(e.uid);
+                          _selected.add(w.uid);
                         } else {
-                          _selected.remove(e.uid);
+                          _selected.remove(w.uid);
                         }
                       });
                     },

@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
+import '../../models/app_user.dart';
+import '../../models/company.dart';
 import '../../models/project.dart';
-import '../../services/app_state.dart';
 import '../../services/project_service.dart';
 import 'create_project_screen.dart';
 import 'project_detail_screen.dart';
 
 class ProjectListScreen extends StatelessWidget {
-  const ProjectListScreen({super.key});
+  final Company company;
+  final AppUser user;
+
+  const ProjectListScreen({super.key, required this.company, required this.user});
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AppState>().currentUser!;
     final projectService = ProjectService();
-    final stream = user.isAdmin
-        ? projectService.watchProjects()
-        : projectService.watchProjectsForEngineer(user.uid);
+    final stream = user.isCompanyAdmin
+        ? projectService.watchProjectsForCompany(company.id)
+        : projectService.watchProjectsForWorker(user.uid);
 
     return Scaffold(
       body: StreamBuilder<List<Project>>(
@@ -32,7 +34,7 @@ class ProjectListScreen extends StatelessWidget {
           if (projects.isEmpty) {
             return Center(
               child: Text(
-                user.isAdmin
+                user.isCompanyAdmin
                     ? 'No projects yet. Tap + to create one.'
                     : 'No projects assigned to you yet.',
                 textAlign: TextAlign.center,
@@ -48,11 +50,16 @@ class ProjectListScreen extends StatelessWidget {
               return Card(
                 child: ListTile(
                   title: Text(project.name),
-                  subtitle: Text('${project.location}\n${_statusLabel(project.status)}'),
+                  subtitle: Text(
+                    '${project.clientName.isEmpty ? project.location : '${project.clientName} · ${project.location}'}\n'
+                    '${_statusLabel(project.status)}',
+                  ),
                   isThreeLine: true,
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: project)),
+                    MaterialPageRoute(
+                      builder: (_) => ProjectDetailScreen(project: project, user: user),
+                    ),
                   ),
                 ),
               );
@@ -60,10 +67,10 @@ class ProjectListScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: user.isAdmin
+      floatingActionButton: user.isCompanyAdmin
           ? FloatingActionButton(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CreateProjectScreen()),
+                MaterialPageRoute(builder: (_) => CreateProjectScreen(company: company)),
               ),
               child: const Icon(Icons.add),
             )

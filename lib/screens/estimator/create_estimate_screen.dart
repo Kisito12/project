@@ -10,15 +10,25 @@ import '../../services/estimate_service.dart';
 class CreateEstimateScreen extends StatefulWidget {
   final Project project;
 
-  const CreateEstimateScreen({super.key, required this.project});
+  /// Pre-fills the estimate with quantities suggested by the plan/spec
+  /// takeoff, still fully editable before saving.
+  final List<EstimateItem> initialItems;
+  final String initialTitle;
+
+  const CreateEstimateScreen({
+    super.key,
+    required this.project,
+    this.initialItems = const [],
+    this.initialTitle = 'Cost Estimate',
+  });
 
   @override
   State<CreateEstimateScreen> createState() => _CreateEstimateScreenState();
 }
 
 class _CreateEstimateScreenState extends State<CreateEstimateScreen> {
-  final _titleController = TextEditingController(text: 'Cost Estimate');
-  final List<EstimateItem> _items = [];
+  late final _titleController = TextEditingController(text: widget.initialTitle);
+  late final List<EstimateItem> _items = List.of(widget.initialItems);
   bool _submitting = false;
 
   final _currency = NumberFormat.currency(symbol: '\$');
@@ -55,6 +65,7 @@ class _CreateEstimateScreenState extends State<CreateEstimateScreen> {
       await EstimateService().saveEstimate(
         Estimate(
           id: '',
+          companyId: widget.project.companyId,
           projectId: widget.project.id,
           title: _titleController.text.trim().isEmpty
               ? 'Cost Estimate'

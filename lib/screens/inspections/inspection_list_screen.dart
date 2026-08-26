@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../models/app_user.dart';
 import '../../models/inspection.dart';
 import '../../models/project.dart';
 import '../../services/inspection_service.dart';
@@ -8,8 +9,9 @@ import 'create_inspection_screen.dart';
 
 class InspectionListScreen extends StatelessWidget {
   final Project project;
+  final AppUser user;
 
-  const InspectionListScreen({super.key, required this.project});
+  const InspectionListScreen({super.key, required this.project, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +92,7 @@ class InspectionListScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => CreateInspectionScreen(project: project)),
+          MaterialPageRoute(builder: (_) => CreateInspectionScreen(project: project, user: user)),
         ),
         child: const Icon(Icons.add_a_photo),
       ),

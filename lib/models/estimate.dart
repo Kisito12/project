@@ -1,14 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 
-/// The standard construction phases covered by the estimator,
-/// ordered from foundation through to roofing and finishes.
+/// The standard construction phases/trades covered by the estimator,
+/// ordered from foundation through to roofing, services, and finishes.
 enum ConstructionPhase {
   siteworks,
   foundation,
   substructure,
   superstructure,
   roofing,
+  electrical,
+  plumbing,
   finishes,
 }
 
@@ -25,6 +27,10 @@ extension ConstructionPhaseLabel on ConstructionPhase {
         return 'Superstructure & Walls';
       case ConstructionPhase.roofing:
         return 'Roofing';
+      case ConstructionPhase.electrical:
+        return 'Electrical';
+      case ConstructionPhase.plumbing:
+        return 'Plumbing';
       case ConstructionPhase.finishes:
         return 'Finishes';
     }
@@ -110,6 +116,7 @@ class EstimateItem {
 /// every construction phase from foundation through to roofing.
 class Estimate {
   final String id;
+  final String companyId;
   final String projectId;
   final String title;
   final List<EstimateItem> items;
@@ -118,6 +125,7 @@ class Estimate {
 
   const Estimate({
     required this.id,
+    required this.companyId,
     required this.projectId,
     required this.title,
     required this.items,
@@ -142,6 +150,7 @@ class Estimate {
     );
     return Estimate(
       id: doc.id,
+      companyId: data['companyId'] as String? ?? '',
       projectId: data['projectId'] as String? ?? '',
       title: data['title'] as String? ?? '',
       items: rawItems.map(EstimateItem.fromMap).toList(),
@@ -152,6 +161,7 @@ class Estimate {
 
   Map<String, dynamic> toMap() {
     return {
+      'companyId': companyId,
       'projectId': projectId,
       'title': title,
       'items': items.map((i) => i.toMap()).toList(),

@@ -11,55 +11,83 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    function isAdmin() {
-      return isSignedIn() && userDoc().data.role == 'admin';
+    function myRole() {
+      return userDoc().data.role;
     }
 
-    function isAssignedToProject(projectId) {
-      let project = get(/databases/$(database)/documents/projects/$(projectId));
-      return isSignedIn() && request.auth.uid in project.data.assignedEngineerIds;
+    function myCompanyId() {
+      return userDoc().data.companyId;
     }
 
-    // Users can read any profile (needed for the engineer directory and
-    // assignment pickers), but may only create/update their own document.
-    // The role is set once at registration and cannot be self-escalated.
+    function isSuperAdmin() {
+      return isSignedIn() && myRole() == 'superAdmin';
+    }
+
+    function isCompanyMemberOf(companyId) {
+      return isSignedIn() && myCompanyId() == companyId;
+    }
+
+    function isCompanyAdminOf(companyId) {
+      return isSignedIn() && myRole() == 'companyAdmin' && myCompanyId() == companyId;
+    }
+
+    function projectDoc(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId));
+    }
+
+    // The platform's companies. Anyone signed in can browse them (needed to
+    // join one at registration); only a super admin can approve/suspend.
+    match /companies/{companyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // User profiles. Role and companyId are set once at registration and
+    // cannot be self-escalated afterwards.
     match /users/{uid} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == uid;
       allow update: if isSignedIn() && request.auth.uid == uid
-                    && request.resource.data.role == resource.data.role;
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.companyId == resource.data.companyId;
     }
 
     match /projects/{projectId} {
-      allow read: if isAdmin() || (isSignedIn() && request.auth.uid in resource.data.assignedEngineerIds);
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin();
+      allow read: if isSuperAdmin() || isCompanyMemberOf(resource.data.companyId);
+      allow create: if isCompanyAdminOf(request.resource.data.companyId);
+      allow update, delete: if isCompanyAdminOf(resource.data.companyId);
 
       match /tasks/{taskId} {
-        allow read: if isAdmin() || isAssignedToProject(projectId);
-        allow create, delete: if isAdmin();
-        allow update: if isAdmin() ||
+        allow read: if isSuperAdmin() || isCompanyMemberOf(projectDoc(projectId).data.companyId);
+        allow create, delete: if isCompanyAdminOf(projectDoc(projectId).data.companyId);
+        allow update: if isCompanyAdminOf(projectDoc(projectId).data.companyId) ||
                        (isSignedIn() && resource.data.assignedToId == request.auth.uid);
       }
     }
 
     // Inspection reports are append-only field records tied to a project.
     match /inspections/{inspectionId} {
-      allow read: if isAdmin() || isAssignedToProject(resource.data.projectId);
+      allow read: if isSuperAdmin() || isCompanyMemberOf(resource.data.companyId);
       allow create: if isSignedIn()
                     && request.resource.data.inspectorId == request.auth.uid
-                    && isAssignedToProject(request.resource.data.projectId);
-      allow update, delete: if isAdmin();
+                    && isCompanyMemberOf(request.resource.data.companyId)
+                    && projectDoc(request.resource.data.projectId).data.companyId == request.resource.data.companyId;
+      allow update, delete: if isCompanyAdminOf(resource.data.companyId);
     }
 
-    // Cost estimates: any team member on the project can build one, only
-    // admins can remove one.
+    // Cost estimates: any company member can build one; only the company
+    // admin can remove one. Saved estimates are immutable - build a new one
+    // instead of editing in place.
     match /estimates/{estimateId} {
-      allow read: if isAdmin() || isAssignedToProject(resource.data.projectId);
+      allow read: if isSuperAdmin() || isCompanyMemberOf(resource.data.companyId);
       allow create: if isSignedIn()
                     && request.resource.data.createdBy == request.auth.uid
-                    && (isAdmin() || isAssignedToProject(request.resource.data.projectId));
-      allow delete: if isAdmin();
+                    && isCompanyMemberOf(request.resource.data.companyId)
+                    && projectDoc(request.resource.data.projectId).data.companyId == request.resource.data.companyId;
+      allow delete: if isCompanyAdminOf(resource.data.companyId);
       allow update: if false;
     }
   }

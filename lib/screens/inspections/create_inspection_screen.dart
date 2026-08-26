@@ -2,17 +2,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 
+import '../../models/app_user.dart';
 import '../../models/inspection.dart';
 import '../../models/project.dart';
-import '../../services/app_state.dart';
 import '../../services/inspection_service.dart';
 
 class CreateInspectionScreen extends StatefulWidget {
   final Project project;
+  final AppUser user;
 
-  const CreateInspectionScreen({super.key, required this.project});
+  const CreateInspectionScreen({super.key, required this.project, required this.user});
 
   @override
   State<CreateInspectionScreen> createState() => _CreateInspectionScreenState();
@@ -43,15 +43,15 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     try {
-      final user = context.read<AppState>().currentUser!;
       final service = InspectionService();
       final photoUrls = await service.uploadPhotos(widget.project.id, _photos);
       await service.createInspection(
         Inspection(
           id: '',
+          companyId: widget.project.companyId,
           projectId: widget.project.id,
-          inspectorId: user.uid,
-          inspectorName: user.name,
+          inspectorId: widget.user.uid,
+          inspectorName: widget.user.name,
           summary: _summaryController.text.trim(),
           severity: _severity,
           photoUrls: photoUrls,

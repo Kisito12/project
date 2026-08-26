@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/building_spec.dart';
+import '../../models/company.dart';
 import '../../models/project.dart';
 import '../../services/app_state.dart';
 import '../../services/project_service.dart';
 
 class CreateProjectScreen extends StatefulWidget {
-  const CreateProjectScreen({super.key});
+  final Company company;
+
+  const CreateProjectScreen({super.key, required this.company});
 
   @override
   State<CreateProjectScreen> createState() => _CreateProjectScreenState();
@@ -17,6 +21,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   final _nameController = TextEditingController();
   final _locationController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _clientNameController = TextEditingController();
+  final _clientPhoneController = TextEditingController();
+  final _clientAddressController = TextEditingController();
   bool _submitting = false;
 
   @override
@@ -24,6 +31,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     _nameController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
+    _clientNameController.dispose();
+    _clientPhoneController.dispose();
+    _clientAddressController.dispose();
     super.dispose();
   }
 
@@ -33,12 +43,19 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     final user = context.read<AppState>().currentUser!;
     final project = Project(
       id: '',
+      companyId: widget.company.id,
       name: _nameController.text.trim(),
       location: _locationController.text.trim(),
       description: _descriptionController.text.trim(),
+      clientName: _clientNameController.text.trim(),
+      clientPhone: _clientPhoneController.text.trim(),
+      clientAddress: _clientAddressController.text.trim(),
       status: ProjectStatus.planning,
       createdBy: user.uid,
-      assignedEngineerIds: const [],
+      assignedWorkerIds: const [],
+      planFileUrl: null,
+      planFileName: null,
+      buildingSpec: BuildingSpec.empty(),
       createdAt: DateTime.now(),
     );
     try {
@@ -76,6 +93,27 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 controller: _descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
                 maxLines: 3,
+              ),
+              const SizedBox(height: 20),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Client', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _clientNameController,
+                decoration: const InputDecoration(labelText: 'Client name'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _clientPhoneController,
+                decoration: const InputDecoration(labelText: 'Client phone'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _clientAddressController,
+                decoration: const InputDecoration(labelText: 'Client address'),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
