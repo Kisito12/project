@@ -25,9 +25,16 @@ class PreviewApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final previewTheme = AppTheme.light.copyWith(
-      textTheme: AppTheme.light.textTheme.apply(fontFamily: 'PreviewFont'),
-      primaryTextTheme: AppTheme.light.primaryTextTheme.apply(fontFamily: 'PreviewFont'),
+    final baseTheme = AppTheme.light;
+    final previewTheme = baseTheme.copyWith(
+      textTheme: baseTheme.textTheme.apply(fontFamily: 'PreviewFont'),
+      primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: 'PreviewFont'),
+      // appBarTheme.titleTextStyle is set independently of textTheme, so the
+      // override above doesn't reach it - patch it separately here so app
+      // bar titles render in this sandbox (no effect on the shipped app).
+      appBarTheme: baseTheme.appBarTheme.copyWith(
+        titleTextStyle: baseTheme.appBarTheme.titleTextStyle?.copyWith(fontFamily: 'PreviewFont'),
+      ),
     );
     return MaterialApp(
       title: 'CivilSite Preview',
