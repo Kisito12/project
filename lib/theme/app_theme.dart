@@ -37,7 +37,7 @@ class AppTheme {
         foregroundColor: textPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: textTheme.titleLarge?.copyWith(
           color: textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w700,
