@@ -271,41 +271,170 @@ class PreviewProjectList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final active = projects.where((p) => p.status == ProjectStatus.active).length;
+    final planning = projects.where((p) => p.status == ProjectStatus.planning).length;
+    final completed = projects.where((p) => p.status == ProjectStatus.completed).length;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Okafor Builders Ltd'),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Center(
-              child: Chip(
-                label: Text('Company Admin'),
-                backgroundColor: Colors.white,
-                labelStyle: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
-              ),
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: const Text('AO',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Hi Ada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                      Text('Okafor Builders Ltd · Company Admin',
+                          style: TextStyle(fontSize: 12.5, color: AppTheme.textSecondary)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.logout, color: AppTheme.textSecondary),
+              ],
             ),
-          ),
-          Icon(Icons.logout),
-          SizedBox(width: 12),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: _previewStat('$active', 'Active', AppTheme.primary)),
+                const SizedBox(width: 10),
+                Expanded(child: _previewStat('$planning', 'Planning', const Color(0xFFE0A32E))),
+                const SizedBox(width: 10),
+                Expanded(child: _previewStat('$completed', 'Completed', const Color(0xFF5B8DEF))),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Projects', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration:
+                      BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(999)),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.add, color: Colors.white, size: 16),
+                    SizedBox(width: 4),
+                    Text('New', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                  ]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            for (final project in projects) ...[
+              _previewProjectCard(project),
+              const SizedBox(height: 14),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _previewStat(String value, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(height: 8),
+          Text(value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+          Text(label, style: const TextStyle(fontSize: 11.5, color: AppTheme.textSecondary)),
         ],
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(12),
-        itemCount: projects.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final project = projects[index];
-          return Card(
-            child: ListTile(
-              title: Text(project.name),
-              subtitle: Text('${project.clientName} · ${project.location}\n${project.status.name}'),
-              isThreeLine: true,
-              trailing: const Icon(Icons.chevron_right),
-            ),
-          );
-        },
+    );
+  }
+
+  Widget _previewProjectCard(Project project) {
+    final (label, color) = switch (project.status) {
+      ProjectStatus.planning => ('Planning', const Color(0xFFE0A32E)),
+      ProjectStatus.active => ('Active', AppTheme.primary),
+      ProjectStatus.onHold => ('On hold', const Color(0xFF9AA5A0)),
+      ProjectStatus.completed => ('Done', const Color(0xFF5B8DEF)),
+    };
+    final progress = switch (project.status) {
+      ProjectStatus.planning => 0.08,
+      ProjectStatus.active => 0.62,
+      ProjectStatus.onHold => 0.4,
+      ProjectStatus.completed => 1.0,
+    };
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () {}, child: const Icon(Icons.add)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(color: const Color(0xFFEFF3EF), borderRadius: BorderRadius.circular(14)),
+            child: const Icon(Icons.home_work_outlined, color: AppTheme.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(project.name,
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration:
+                          BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(999)),
+                      child: Text(label,
+                          style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text('${project.clientName} · ${project.location}',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFFEFF3EF),
+                    valueColor: const AlwaysStoppedAnimation(AppTheme.primary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
