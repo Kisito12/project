@@ -1,6 +1,7 @@
-// File generated normally by the FlutterFire CLI, hand-stubbed here as a
-// placeholder. Replace it by running `flutterfire configure` from the
-// project root once you have created a Firebase project — see README.md.
+// The web config below is wired to the real Firebase project "Building
+// applications" (project ID building-applications-6d131), registered as the
+// web app "Civil apps" in the Firebase console. Android/iOS still need their
+// own app registered in that same project - see README.md.
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
@@ -25,17 +26,14 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // TODO: Replace every value below by running `flutterfire configure`.
-  // (The `civilsite-dev` project id matches .firebaserc / firebase.json so
-  // `flutter run --dart-define=USE_FIREBASE_EMULATOR=true` works against the
-  // local Firebase Emulator Suite without any real project.)
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'demo-api-key',
-    appId: '1:000000000000:web:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'civilsite-dev',
-    authDomain: 'civilsite-dev.firebaseapp.com',
-    storageBucket: 'civilsite-dev.appspot.com',
+    apiKey: 'AIzaSyD_EOqL8eDLZq0UFfB9fL5UYbTN-Y8oM3I',
+    appId: '1:735791799372:web:87a715e4e06ed4989928e9',
+    messagingSenderId: '735791799372',
+    projectId: 'building-applications-6d131',
+    authDomain: 'building-applications-6d131.firebaseapp.com',
+    storageBucket: 'building-applications-6d131.firebasestorage.app',
+    measurementId: 'G-S018HMGSJX',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
